@@ -6,7 +6,7 @@ pub enum Token
     IntegerLiteral(String),
     StringLiteral(String),
     Semicolon,
-    Assign,
+    Assignment,
     Minus,
     If,
     Equals,
