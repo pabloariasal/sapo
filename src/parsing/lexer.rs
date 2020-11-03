@@ -32,13 +32,13 @@ impl Lexer {
             c if is_alpha(c) => self.read_identifier(),
             '"' => self.read_string(),
             '-' => Token::Minus,
-            '=' => match self.peek() {
-                '=' => {
-                    self.advance();
+            '=' => {
+                if self.matches('=') {
                     Token::Equals
+                } else {
+                    Token::Assignment
                 }
-                _ => Token::Assignment,
-            },
+            }
             ';' => Token::Semicolon,
             _ => Token::InvalidToken(self.current_char.to_string()),
         }
@@ -109,6 +109,17 @@ impl Lexer {
             Some(&c) => c,
             _ => EOF,
         }
+    }
+
+    /// Conditional advance.
+    /// Advances the lexer if the next character matches expected
+    /// Returns true is the lexer was advanced, false otherwise
+    fn matches(&mut self, expected: char) -> bool {
+        if self.peek() == expected {
+            self.advance();
+            return true;
+        }
+        false
     }
 
     fn extract_substring(&self, from: usize, to: usize) -> String {
