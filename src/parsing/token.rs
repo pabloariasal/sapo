@@ -1,14 +1,23 @@
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token
 {
-    InvalidToken(String),
+    // Single character tokens
+    Semicolon,
+    Minus,
+
+    // Prefixed tokens (!=, ==, <=, etc)
+    Assignment,
+    Equals,
+
+    // Keywords
+    If,
+
+    // Literals
     Identifier(String),
     IntegerLiteral(String),
     StringLiteral(String),
-    Semicolon,
-    Assignment,
-    Minus,
-    If,
-    Equals,
+
+    // Special tokens
+    InvalidToken(String),
     EOF,
 }
