@@ -187,10 +187,10 @@ mod tests {
 
     #[test]
     fn lex_strings() {
-        let mut l = Lexer::new(String::from("\"bla bla bla\"  "));
+        let mut l = Lexer::new(String::from("\"bla \n bla bla\"  "));
         assert_eq!(
             l.next_token(),
-            Token::StringLiteral("bla bla bla".to_string())
+            Token::StringLiteral("bla \n bla bla".to_string())
         );
         assert_eq!(l.next_token(), Token::EOF);
     }
