@@ -1,6 +1,5 @@
 #[derive(Debug, PartialEq, Clone)]
-pub enum Token
-{
+pub enum TokenType {
     // Single character tokens
     Semicolon,
     LeftParen,
@@ -27,12 +26,27 @@ pub enum Token
     False,
     True,
 
+    Identifier,
     // Literals
-    Identifier(String),
-    IntegerLiteral(String),
-    StringLiteral(String),
+    IntegerLiteral,
+    StringLiteral,
 
     // Special tokens
-    InvalidToken(String),
+    InvalidToken,
     EOF,
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct Token {
+    pub token_type: TokenType,
+    pub lexeme: String,
+}
+
+impl Token {
+    pub fn new(token_type: TokenType, lexeme: String) -> Token {
+        Token {
+            token_type,
+            lexeme
+        }
+    }
 }

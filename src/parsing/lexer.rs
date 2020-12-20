@@ -1,4 +1,5 @@
 use super::Token;
+use super::TokenType;
 use std::collections::HashMap;
 
 const EOF: char = '\u{0}';
@@ -27,46 +28,46 @@ impl Lexer {
         //move to first non-whitespace character
         self.advance_until(|c| !c.is_whitespace());
         match self.current_char {
-            EOF => Token::EOF,
+            EOF => token(TokenType::EOF, "EOF"),
             c if is_digit(c) => self.read_number(),
             c if is_alpha(c) => self.read_identifier(),
             '"' => self.read_string(),
-            '-' => Token::Minus,
-            '+' => Token::Plus,
-            '*' => Token::Dot,
-            '/' => Token::Slash,
-            '(' => Token::LeftParen,
-            ')' => Token::RightParen,
+            '-' => token(TokenType::Minus, &self.current_char.to_string()),
+            '+' => token(TokenType::Plus, &self.current_char.to_string()),
+            '*' => token(TokenType::Dot, &self.current_char.to_string()),
+            '/' => token(TokenType::Slash, &self.current_char.to_string()),
+            '(' => token(TokenType::LeftParen, &self.current_char.to_string()),
+            ')' => token(TokenType::RightParen, &self.current_char.to_string()),
             '=' => {
                 if self.matches('=') {
-                    Token::Equals
+                    token(TokenType::Equals, "==")
                 } else {
-                    Token::Assignment
+                    token(TokenType::Assignment, &self.current_char.to_string())
                 }
             }
             '!' => {
                 if self.matches('=') {
-                    Token::BangEquals
+                    token(TokenType::BangEquals, "!=")
                 } else {
-                    Token::Bang
+                    token(TokenType::Bang, &self.current_char.to_string())
                 }
             }
             '<' => {
                 if self.matches('=') {
-                    Token::SmallerEquals
+                    token(TokenType::SmallerEquals, "<=")
                 } else {
-                    Token::Smaller
+                    token(TokenType::Smaller, &self.current_char.to_string())
                 }
             }
             '>' => {
                 if self.matches('=') {
-                    Token::GreaterEquals
+                    token(TokenType::GreaterEquals, ">=")
                 } else {
-                    Token::Greater
+                    token(TokenType::Greater, &self.current_char.to_string())
                 }
             }
-            ';' => Token::Semicolon,
-            _ => Token::InvalidToken(self.current_char.to_string()),
+            ';' => token(TokenType::Semicolon, &self.current_char.to_string()),
+            _ => token(TokenType::InvalidToken, &self.current_char.to_string()),
         }
     }
 
@@ -75,7 +76,10 @@ impl Lexer {
         self.advance();
         let start = self.position;
         self.advance_while(|c| c != '"');
-        let t = Token::StringLiteral(self.extract_substring(start, self.position + 1));
+        let t = Token::new(
+            TokenType::StringLiteral,
+            self.extract_substring(start, self.position + 1),
+        );
         // advance closing '"'
         self.advance();
         t
@@ -84,7 +88,10 @@ impl Lexer {
     fn read_number(&mut self) -> Token {
         let start = self.position;
         self.advance_while(is_digit);
-        Token::IntegerLiteral(self.extract_substring(start, self.position + 1))
+        Token::new(
+            TokenType::IntegerLiteral,
+            self.extract_substring(start, self.position + 1),
+        )
     }
 
     fn read_identifier(&mut self) -> Token {
@@ -93,7 +100,7 @@ impl Lexer {
         let identifier = self.extract_substring(start, self.position + 1);
         match self.keywords.get(&identifier) {
             Some(token) => token.clone(),
-            None => Token::Identifier(identifier),
+            None => Token::new(TokenType::Identifier, identifier),
         }
     }
 
@@ -153,11 +160,24 @@ impl Lexer {
     }
 }
 
+fn token(token_type: TokenType, lexeme: &str) -> Token {
+    Token::new(token_type, lexeme.to_string())
+}
+
 fn initialize_keywords() -> HashMap<String, Token> {
     let mut keywords = HashMap::new();
-    keywords.insert("if".to_string(), Token::If);
-    keywords.insert("true".to_string(), Token::True);
-    keywords.insert("false".to_string(), Token::False);
+    keywords.insert(
+        "if".to_string(),
+        Token::new(TokenType::If, "if".to_string()),
+    );
+    keywords.insert(
+        "true".to_string(),
+        Token::new(TokenType::True, "true".to_string()),
+    );
+    keywords.insert(
+        "false".to_string(),
+        Token::new(TokenType::False, "false".to_string()),
+    );
     keywords
 }
 
@@ -176,83 +196,83 @@ mod tests {
     #[test]
     fn lex_boolean_expressions() {
         let mut l = Lexer::new(String::from("true false !true"));
-        assert_eq!(l.next_token(), Token::True);
-        assert_eq!(l.next_token(), Token::False);
-        assert_eq!(l.next_token(), Token::Bang);
-        assert_eq!(l.next_token(), Token::True);
-        assert_eq!(l.next_token(), Token::EOF);
+        assert_eq!(l.next_token(), token(TokenType::True, "true"));
+        assert_eq!(l.next_token(), token(TokenType::False, "false"));
+        assert_eq!(l.next_token(), token(TokenType::Bang, "!"));
+        assert_eq!(l.next_token(), token(TokenType::True, "true"));
+        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
     #[test]
     fn lex_comparison_operators() {
         let mut l = Lexer::new(String::from("= == != <= >= <>"));
-        assert_eq!(l.next_token(), Token::Assignment);
-        assert_eq!(l.next_token(), Token::Equals);
-        assert_eq!(l.next_token(), Token::BangEquals);
-        assert_eq!(l.next_token(), Token::SmallerEquals);
-        assert_eq!(l.next_token(), Token::GreaterEquals);
-        assert_eq!(l.next_token(), Token::Smaller);
-        assert_eq!(l.next_token(), Token::Greater);
-        assert_eq!(l.next_token(), Token::EOF);
+        assert_eq!(l.next_token(), token(TokenType::Assignment, "="));
+        assert_eq!(l.next_token(), token(TokenType::Equals, "=="));
+        assert_eq!(l.next_token(), token(TokenType::BangEquals, "!="));
+        assert_eq!(l.next_token(), token(TokenType::SmallerEquals, "<="));
+        assert_eq!(l.next_token(), token(TokenType::GreaterEquals, ">="));
+        assert_eq!(l.next_token(), token(TokenType::Smaller, "<"));
+        assert_eq!(l.next_token(), token(TokenType::Greater, ">"));
+        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
     #[test]
     fn lex_parenthesis() {
         let mut l = Lexer::new(String::from("(( ))"));
-        assert_eq!(l.next_token(), Token::LeftParen);
-        assert_eq!(l.next_token(), Token::LeftParen);
-        assert_eq!(l.next_token(), Token::RightParen);
-        assert_eq!(l.next_token(), Token::RightParen);
-        assert_eq!(l.next_token(), Token::EOF);
+        assert_eq!(l.next_token(), token(TokenType::LeftParen, "("));
+        assert_eq!(l.next_token(), token(TokenType::LeftParen, "("));
+        assert_eq!(l.next_token(), token(TokenType::RightParen, ")"));
+        assert_eq!(l.next_token(), token(TokenType::RightParen, ")"));
+        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
     #[test]
     fn lex_arithmetic_operators() {
         let mut l = Lexer::new(String::from(" + - */"));
-        assert_eq!(l.next_token(), Token::Plus);
-        assert_eq!(l.next_token(), Token::Minus);
-        assert_eq!(l.next_token(), Token::Dot);
-        assert_eq!(l.next_token(), Token::Slash);
+        assert_eq!(l.next_token(), token(TokenType::Plus, "+"));
+        assert_eq!(l.next_token(), token(TokenType::Minus, "-"));
+        assert_eq!(l.next_token(), token(TokenType::Dot, "*"));
+        assert_eq!(l.next_token(), token(TokenType::Slash, "/"));
     }
 
     #[test]
     fn lex_empty_string() {
         let mut l = Lexer::new(String::from(""));
-        assert_eq!(l.next_token(), Token::EOF);
+        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
     #[test]
     fn lex_whitespace() {
         let mut l = Lexer::new(String::from("\r \t \n   "));
-        assert_eq!(l.next_token(), Token::EOF);
+        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
     #[test]
     fn lex_integral_literals() {
         let input = "5 88989 -2928";
         let mut l = Lexer::new(String::from(input));
-        assert_eq!(l.next_token(), Token::IntegerLiteral("5".to_string()));
-        assert_eq!(l.next_token(), Token::IntegerLiteral("88989".to_string()));
-        assert_eq!(l.next_token(), Token::Minus);
-        assert_eq!(l.next_token(), Token::IntegerLiteral("2928".to_string()));
-        assert_eq!(l.next_token(), Token::EOF);
+        assert_eq!(l.next_token(), token(TokenType::IntegerLiteral, "5"));
+        assert_eq!(l.next_token(), token(TokenType::IntegerLiteral, "88989"));
+        assert_eq!(l.next_token(), token(TokenType::Minus, "-"));
+        assert_eq!(l.next_token(), token(TokenType::IntegerLiteral, "2928"));
+        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
     #[test]
     fn lex_identifiers() {
         let input = "_x x_x_x78 Yh0A99";
         let mut l = Lexer::new(String::from(input.to_string()));
-        assert_eq!(l.next_token(), Token::Identifier("_x".to_string()));
-        assert_eq!(l.next_token(), Token::Identifier("x_x_x78".to_string()));
-        assert_eq!(l.next_token(), Token::Identifier("Yh0A99".to_string()));
-        assert_eq!(l.next_token(), Token::EOF);
+        assert_eq!(l.next_token(), token(TokenType::Identifier, "_x"));
+        assert_eq!(l.next_token(), token(TokenType::Identifier, "x_x_x78"));
+        assert_eq!(l.next_token(), token(TokenType::Identifier, "Yh0A99"));
+        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
     #[test]
     fn lex_invalid_tokens() {
         let mut l = Lexer::new(String::from("#"));
-        assert_eq!(l.next_token(), Token::InvalidToken("#".to_string()));
-        assert_eq!(l.next_token(), Token::EOF);
+        assert_eq!(l.next_token(), token(TokenType::InvalidToken, "#"));
+        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
     #[test]
@@ -260,24 +280,24 @@ mod tests {
         let mut l = Lexer::new(String::from("\"bla \n bla bla\"  "));
         assert_eq!(
             l.next_token(),
-            Token::StringLiteral("bla \n bla bla".to_string())
+            token(TokenType::StringLiteral, "bla \n bla bla")
         );
-        assert_eq!(l.next_token(), Token::EOF);
+        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
     #[test]
     fn lex_if() {
         let mut l = Lexer::new(String::from("if"));
-        assert_eq!(l.next_token(), Token::If);
-        assert_eq!(l.next_token(), Token::EOF);
+        assert_eq!(l.next_token(), token(TokenType::If, "if"));
+        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
     #[test]
     fn lex_semicolon() {
         let mut l = Lexer::new(String::from("47;"));
-        assert_eq!(l.next_token(), Token::IntegerLiteral("47".to_string()));
-        assert_eq!(l.next_token(), Token::Semicolon);
-        assert_eq!(l.next_token(), Token::EOF);
+        assert_eq!(l.next_token(), token(TokenType::IntegerLiteral, "47"));
+        assert_eq!(l.next_token(), token(TokenType::Semicolon, ";"));
+        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
     #[test]
@@ -292,24 +312,24 @@ mod tests {
         "#;
 
         let expected_tokens = [
-            Token::Identifier(String::from("x")),
-            Token::Assignment,
-            Token::Minus,
-            Token::IntegerLiteral(String::from("4")),
-            Token::Semicolon,
-            Token::Identifier(String::from("yolo")),
-            Token::Assignment,
-            Token::IntegerLiteral(String::from("56789")),
-            Token::StringLiteral(String::from("iii")),
-            Token::Identifier(String::from("z42")),
-            Token::Assignment,
-            Token::StringLiteral(String::from("mono is cool")),
-            Token::InvalidToken(String::from("#")),
-            Token::If,
-            Token::Equals,
-            Token::EOF,
-            Token::EOF,
-            Token::EOF,
+            token(TokenType::Identifier, "x"),
+            token(TokenType::Assignment, "="),
+            token(TokenType::Minus, "-"),
+            token(TokenType::IntegerLiteral, "4"),
+            token(TokenType::Semicolon, ";"),
+            token(TokenType::Identifier, "yolo"),
+            token(TokenType::Assignment, "="),
+            token(TokenType::IntegerLiteral, "56789"),
+            token(TokenType::StringLiteral, "iii"),
+            token(TokenType::Identifier, "z42"),
+            token(TokenType::Assignment, "="),
+            token(TokenType::StringLiteral, "mono is cool"),
+            token(TokenType::InvalidToken, "#"),
+            token(TokenType::If, "if"),
+            token(TokenType::Equals, "=="),
+            token(TokenType::EOF, "EOF"),
+            token(TokenType::EOF, "EOF"),
+            token(TokenType::EOF, "EOF"),
         ];
         let mut l = Lexer::new(input.to_string());
 

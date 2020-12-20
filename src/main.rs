@@ -1,7 +1,7 @@
 use std::io;
 use std::io::Write;
 use topo::parsing::Lexer;
-use topo::parsing::Token;
+use topo::parsing::TokenType;
 
 fn main() {
     println!("Topo Programming Language");
@@ -19,7 +19,7 @@ fn main() {
                 loop {
                     let token = lexer.next_token();
                     println!("{:?}", token);
-                    if token == Token::EOF {
+                    if token.token_type == TokenType::EOF {
                         break;
                     }
                 }
