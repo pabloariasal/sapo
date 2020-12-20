@@ -1,10 +1,10 @@
 use std::io;
 use std::io::Write;
-use topo::parsing::Lexer;
-use topo::parsing::TokenType;
+use sapo::parsing::Lexer;
+use sapo::parsing::TokenType;
 
 fn main() {
-    println!("Topo Programming Language");
+    println!("Sapo Programming Language");
     loop {
         print!("=> ");
         io::stdout().flush().unwrap();
