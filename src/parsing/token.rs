@@ -4,6 +4,8 @@ pub enum TokenType {
     Semicolon,
     LeftParen,
     RightParen,
+    LeftBrace,
+    RightBrace,
     Bang,
 
     // Arithmetic operators

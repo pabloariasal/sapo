@@ -38,6 +38,8 @@ impl Lexer {
             '/' => token(TokenType::Slash, &self.current_char.to_string()),
             '(' => token(TokenType::LeftParen, &self.current_char.to_string()),
             ')' => token(TokenType::RightParen, &self.current_char.to_string()),
+            '{' => token(TokenType::LeftBrace, &self.current_char.to_string()),
+            '}' => token(TokenType::RightBrace, &self.current_char.to_string()),
             '=' => {
                 if self.matches('=') {
                     token(TokenType::Equals, "==")
@@ -212,8 +214,10 @@ mod tests {
 
     #[test]
     fn lex_parenthesis() {
-        let mut l = Lexer::new(String::from("(( ))"));
+        let mut l = Lexer::new(String::from("({}( ))"));
         assert_eq!(l.next_token(), token(TokenType::LeftParen, "("));
+        assert_eq!(l.next_token(), token(TokenType::LeftBrace, "{"));
+        assert_eq!(l.next_token(), token(TokenType::RightBrace, "}"));
         assert_eq!(l.next_token(), token(TokenType::LeftParen, "("));
         assert_eq!(l.next_token(), token(TokenType::RightParen, ")"));
         assert_eq!(l.next_token(), token(TokenType::RightParen, ")"));
