@@ -32,6 +32,11 @@ impl Lexer {
             c if is_alpha(c) => self.read_identifier(),
             '"' => self.read_string(),
             '-' => Token::Minus,
+            '+' => Token::Plus,
+            '*' => Token::Dot,
+            '/' => Token::Slash,
+            '(' => Token::LeftParen,
+            ')' => Token::RightParen,
             '=' => {
                 if self.matches('=') {
                     Token::Equals
@@ -145,20 +150,38 @@ fn is_digit(c: char) -> bool {
 mod tests {
     use super::*;
 
+   #[test]
+   fn lex_parenthesis() {
+    let mut l = Lexer::new(String::from("(( ))"));
+    assert_eq!(l.next_token(), Token::LeftParen);
+    assert_eq!(l.next_token(), Token::LeftParen);
+    assert_eq!(l.next_token(), Token::RightParen);
+    assert_eq!(l.next_token(), Token::RightParen);
+   }
+
     #[test]
-    fn lexing_empty_string() {
+    fn lex_arithmetic_operators() {
+        let mut l = Lexer::new(String::from(" + - */"));
+        assert_eq!(l.next_token(), Token::Plus);
+        assert_eq!(l.next_token(), Token::Minus);
+        assert_eq!(l.next_token(), Token::Dot);
+        assert_eq!(l.next_token(), Token::Slash);
+    }
+
+    #[test]
+    fn lex_empty_string() {
         let mut l = Lexer::new(String::from(""));
         assert_eq!(l.next_token(), Token::EOF);
     }
 
     #[test]
-    fn lexing_whitespace() {
+    fn lex_whitespace() {
         let mut l = Lexer::new(String::from("\r \t \n   "));
         assert_eq!(l.next_token(), Token::EOF);
     }
 
     #[test]
-    fn lex_integers() {
+    fn lex_integral_literals() {
         let input = "5 88989 -2928";
         let mut l = Lexer::new(String::from(input));
         assert_eq!(l.next_token(), Token::IntegerLiteral("5".to_string()));
@@ -219,7 +242,7 @@ mod tests {
     }
 
     #[test]
-    fn lexing_combined() {
+    fn lex_combined() {
         let input = r#"
            x = -4;
 

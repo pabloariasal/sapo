@@ -3,7 +3,14 @@ pub enum Token
 {
     // Single character tokens
     Semicolon,
+    LeftParen,
+    RightParen,
+
+    // Arithmetic operators
     Minus,
+    Plus,
+    Dot,
+    Slash,
 
     // Prefixed tokens (!=, ==, <=, etc)
     Assignment,
