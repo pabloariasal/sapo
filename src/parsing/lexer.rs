@@ -166,17 +166,11 @@ fn token(token_type: TokenType, lexeme: &str) -> Token {
 
 fn initialize_keywords() -> HashMap<String, Token> {
     let mut keywords = HashMap::new();
-    keywords.insert(
-        "if".to_string(),
-        Token::new(TokenType::If, "if".to_string()),
-    );
-    keywords.insert(
-        "true".to_string(),
-        Token::new(TokenType::True, "true".to_string()),
-    );
+    keywords.insert("if".to_string(), token(TokenType::If, "if"));
+    keywords.insert("true".to_string(), token(TokenType::BooleanLiteral, "true"));
     keywords.insert(
         "false".to_string(),
-        Token::new(TokenType::False, "false".to_string()),
+        token(TokenType::BooleanLiteral, "false"),
     );
     keywords
 }
@@ -196,10 +190,10 @@ mod tests {
     #[test]
     fn lex_boolean_expressions() {
         let mut l = Lexer::new(String::from("true false !true"));
-        assert_eq!(l.next_token(), token(TokenType::True, "true"));
-        assert_eq!(l.next_token(), token(TokenType::False, "false"));
+        assert_eq!(l.next_token(), token(TokenType::BooleanLiteral, "true"));
+        assert_eq!(l.next_token(), token(TokenType::BooleanLiteral, "false"));
         assert_eq!(l.next_token(), token(TokenType::Bang, "!"));
-        assert_eq!(l.next_token(), token(TokenType::True, "true"));
+        assert_eq!(l.next_token(), token(TokenType::BooleanLiteral, "true"));
         assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
     }
 
@@ -311,6 +305,8 @@ mod tests {
 
         "#;
 
+        let mut l = Lexer::new(input.to_string());
+
         let expected_tokens = [
             token(TokenType::Identifier, "x"),
             token(TokenType::Assignment, "="),
@@ -331,7 +327,6 @@ mod tests {
             token(TokenType::EOF, "EOF"),
             token(TokenType::EOF, "EOF"),
         ];
-        let mut l = Lexer::new(input.to_string());
 
         for expected in expected_tokens.iter() {
             let actual = l.next_token();

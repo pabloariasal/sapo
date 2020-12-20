@@ -23,13 +23,12 @@ pub enum TokenType {
 
     // Keywords
     If,
-    False,
-    True,
 
     Identifier,
     // Literals
     IntegerLiteral,
     StringLiteral,
+    BooleanLiteral,
 
     // Special tokens
     InvalidToken,
