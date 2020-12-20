@@ -5,6 +5,7 @@ pub enum Token
     Semicolon,
     LeftParen,
     RightParen,
+    Bang,
 
     // Arithmetic operators
     Minus,
@@ -15,9 +16,16 @@ pub enum Token
     // Prefixed tokens (!=, ==, <=, etc)
     Assignment,
     Equals,
+    BangEquals,
+    Greater,
+    GreaterEquals,
+    Smaller,
+    SmallerEquals,
 
     // Keywords
     If,
+    False,
+    True,
 
     // Literals
     Identifier(String),

@@ -44,6 +44,27 @@ impl Lexer {
                     Token::Assignment
                 }
             }
+            '!' => {
+                if self.matches('=') {
+                    Token::BangEquals
+                } else {
+                    Token::Bang
+                }
+            }
+            '<' => {
+                if self.matches('=') {
+                    Token::SmallerEquals
+                } else {
+                    Token::Smaller
+                }
+            }
+            '>' => {
+                if self.matches('=') {
+                    Token::GreaterEquals
+                } else {
+                    Token::Greater
+                }
+            }
             ';' => Token::Semicolon,
             _ => Token::InvalidToken(self.current_char.to_string()),
         }
@@ -150,14 +171,28 @@ fn is_digit(c: char) -> bool {
 mod tests {
     use super::*;
 
-   #[test]
-   fn lex_parenthesis() {
-    let mut l = Lexer::new(String::from("(( ))"));
-    assert_eq!(l.next_token(), Token::LeftParen);
-    assert_eq!(l.next_token(), Token::LeftParen);
-    assert_eq!(l.next_token(), Token::RightParen);
-    assert_eq!(l.next_token(), Token::RightParen);
-   }
+    #[test]
+    fn lex_comparison_operators() {
+        let mut l = Lexer::new(String::from("= == != <= >= <>"));
+        assert_eq!(l.next_token(), Token::Assignment);
+        assert_eq!(l.next_token(), Token::Equals);
+        assert_eq!(l.next_token(), Token::BangEquals);
+        assert_eq!(l.next_token(), Token::SmallerEquals);
+        assert_eq!(l.next_token(), Token::GreaterEquals);
+        assert_eq!(l.next_token(), Token::Smaller);
+        assert_eq!(l.next_token(), Token::Greater);
+        assert_eq!(l.next_token(), Token::EOF);
+    }
+
+    #[test]
+    fn lex_parenthesis() {
+        let mut l = Lexer::new(String::from("(( ))"));
+        assert_eq!(l.next_token(), Token::LeftParen);
+        assert_eq!(l.next_token(), Token::LeftParen);
+        assert_eq!(l.next_token(), Token::RightParen);
+        assert_eq!(l.next_token(), Token::RightParen);
+        assert_eq!(l.next_token(), Token::EOF);
+    }
 
     #[test]
     fn lex_arithmetic_operators() {
@@ -222,14 +257,6 @@ mod tests {
     fn lex_if() {
         let mut l = Lexer::new(String::from("if"));
         assert_eq!(l.next_token(), Token::If);
-        assert_eq!(l.next_token(), Token::EOF);
-    }
-
-    #[test]
-    fn lex_equals_assign() {
-        let mut l = Lexer::new(String::from("= =="));
-        assert_eq!(l.next_token(), Token::Assignment);
-        assert_eq!(l.next_token(), Token::Equals);
         assert_eq!(l.next_token(), Token::EOF);
     }
 
