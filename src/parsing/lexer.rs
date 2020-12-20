@@ -156,6 +156,8 @@ impl Lexer {
 fn initialize_keywords() -> HashMap<String, Token> {
     let mut keywords = HashMap::new();
     keywords.insert("if".to_string(), Token::If);
+    keywords.insert("true".to_string(), Token::True);
+    keywords.insert("false".to_string(), Token::False);
     keywords
 }
 
@@ -170,6 +172,16 @@ fn is_digit(c: char) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn lex_boolean_expressions() {
+        let mut l = Lexer::new(String::from("true false !true"));
+        assert_eq!(l.next_token(), Token::True);
+        assert_eq!(l.next_token(), Token::False);
+        assert_eq!(l.next_token(), Token::Bang);
+        assert_eq!(l.next_token(), Token::True);
+        assert_eq!(l.next_token(), Token::EOF);
+    }
 
     #[test]
     fn lex_comparison_operators() {
