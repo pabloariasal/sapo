@@ -1,5 +1,5 @@
-use super::Token;
-use super::TokenType;
+use crate::token::Token;
+use crate::token::TokenType;
 use std::collections::HashMap;
 
 const EOF: char = '\u{0}';

@@ -1,7 +1,5 @@
 use std::io;
 use std::io::Write;
-use sapo::parsing::Lexer;
-use sapo::parsing::TokenType;
 
 fn main() {
     println!("Sapo Programming Language");
@@ -15,14 +13,7 @@ fn main() {
         match input.trim() {
             "exit" => break,
             _ => {
-                let mut lexer = Lexer::new(input);
-                loop {
-                    let token = lexer.next_token();
-                    println!("{:?}", token);
-                    if token.token_type == TokenType::EOF {
-                        break;
-                    }
-                }
+                println!("{:?}", sapo::parse(input));
             }
         };
     }
