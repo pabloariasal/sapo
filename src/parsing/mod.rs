@@ -1,6 +1,5 @@
 mod lexer;
 mod token;
 
-pub use lexer::Lexer;
-pub use token::Token;
-pub use token::TokenType;
+pub use lexer::*;
+pub use token::*;
