@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     // Single character tokens
@@ -37,7 +39,7 @@ pub enum TokenType {
     EOF,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
@@ -45,9 +47,12 @@ pub struct Token {
 
 impl Token {
     pub fn new(token_type: TokenType, lexeme: String) -> Token {
-        Token {
-            token_type,
-            lexeme
-        }
+        Token { token_type, lexeme }
+    }
+}
+
+impl fmt::Debug for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.token_type)
     }
 }
