@@ -6,13 +6,7 @@ use std::iter::Peekable;
 type ParsedExpressionResult = Result<Box<ast::Expression>, String>;
 
 pub fn parse(input: String) -> ParsedExpressionResult {
-    let mut lexer = Lexer::new(input);
-    let mut tokens = Vec::new();
-    tokens.push(lexer.next_token());
-    while tokens.last().unwrap().token_type != TokenType::EOF {
-        tokens.push(lexer.next_token());
-    }
-    parse_expression(&mut tokens.into_iter().peekable())
+    parse_expression(&mut Lexer::new(input).peekable())
 }
 
 fn parse_expression<I>(tokens: &mut Peekable<I>) -> ParsedExpressionResult

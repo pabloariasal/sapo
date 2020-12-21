@@ -23,7 +23,7 @@ impl Lexer {
         }
     }
 
-    pub fn next_token(&mut self) -> Token {
+    fn next_token(&mut self) -> Token {
         self.advance();
         //move to first non-whitespace character
         self.advance_until(|c| !c.is_whitespace());
@@ -162,6 +162,19 @@ impl Lexer {
     }
 }
 
+impl Iterator for Lexer {
+    type Item = Token;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next_token = self.next_token();
+        if next_token.token_type == TokenType::EOF {
+            None
+        } else {
+            Some(next_token)
+        }
+    }
+}
+
 fn token(token_type: TokenType, lexeme: &str) -> Token {
     Token::new(token_type, lexeme.to_string())
 }
@@ -190,70 +203,82 @@ mod tests {
     use super::*;
 
     #[test]
+    fn peek_token() {
+        let l = Lexer::new(String::from("true false"));
+        let mut p = l.into_iter().peekable();
+        assert_eq!(*p.peek().unwrap(), token(TokenType::BooleanLiteral, "true"));
+        assert_eq!(p.next().unwrap(), token(TokenType::BooleanLiteral, "true"));
+        assert_eq!(*p.peek().unwrap(), token(TokenType::BooleanLiteral, "false"));
+        assert_eq!(p.next().unwrap(), token(TokenType::BooleanLiteral, "false"));
+        assert_eq!(p.next(), None)
+    }
+
+    #[test]
     fn lex_boolean_expressions() {
         let mut l = Lexer::new(String::from("true false !true"));
-        assert_eq!(l.next_token(), token(TokenType::BooleanLiteral, "true"));
-        assert_eq!(l.next_token(), token(TokenType::BooleanLiteral, "false"));
-        assert_eq!(l.next_token(), token(TokenType::Bang, "!"));
-        assert_eq!(l.next_token(), token(TokenType::BooleanLiteral, "true"));
-        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
+        assert_eq!(l.next().unwrap(), token(TokenType::BooleanLiteral, "true"));
+        assert_eq!(l.next().unwrap(), token(TokenType::BooleanLiteral, "false"));
+        assert_eq!(l.next().unwrap(), token(TokenType::Bang, "!"));
+        assert_eq!(l.next().unwrap(), token(TokenType::BooleanLiteral, "true"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
     fn lex_comparison_operators() {
         let mut l = Lexer::new(String::from("= == != <= >= <>"));
-        assert_eq!(l.next_token(), token(TokenType::Assignment, "="));
-        assert_eq!(l.next_token(), token(TokenType::Equals, "=="));
-        assert_eq!(l.next_token(), token(TokenType::BangEquals, "!="));
-        assert_eq!(l.next_token(), token(TokenType::SmallerEquals, "<="));
-        assert_eq!(l.next_token(), token(TokenType::GreaterEquals, ">="));
-        assert_eq!(l.next_token(), token(TokenType::Smaller, "<"));
-        assert_eq!(l.next_token(), token(TokenType::Greater, ">"));
-        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
+        assert_eq!(l.next().unwrap(), token(TokenType::Assignment, "="));
+        assert_eq!(l.next().unwrap(), token(TokenType::Equals, "=="));
+        assert_eq!(l.next().unwrap(), token(TokenType::BangEquals, "!="));
+        assert_eq!(l.next().unwrap(), token(TokenType::SmallerEquals, "<="));
+        assert_eq!(l.next().unwrap(), token(TokenType::GreaterEquals, ">="));
+        assert_eq!(l.next().unwrap(), token(TokenType::Smaller, "<"));
+        assert_eq!(l.next().unwrap(), token(TokenType::Greater, ">"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
     fn lex_parenthesis() {
         let mut l = Lexer::new(String::from("({}( ))"));
-        assert_eq!(l.next_token(), token(TokenType::LeftParen, "("));
-        assert_eq!(l.next_token(), token(TokenType::LeftBrace, "{"));
-        assert_eq!(l.next_token(), token(TokenType::RightBrace, "}"));
-        assert_eq!(l.next_token(), token(TokenType::LeftParen, "("));
-        assert_eq!(l.next_token(), token(TokenType::RightParen, ")"));
-        assert_eq!(l.next_token(), token(TokenType::RightParen, ")"));
-        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
+        assert_eq!(l.next().unwrap(), token(TokenType::LeftParen, "("));
+        assert_eq!(l.next().unwrap(), token(TokenType::LeftBrace, "{"));
+        assert_eq!(l.next().unwrap(), token(TokenType::RightBrace, "}"));
+        assert_eq!(l.next().unwrap(), token(TokenType::LeftParen, "("));
+        assert_eq!(l.next().unwrap(), token(TokenType::RightParen, ")"));
+        assert_eq!(l.next().unwrap(), token(TokenType::RightParen, ")"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
     fn lex_arithmetic_operators() {
         let mut l = Lexer::new(String::from(" + - */"));
-        assert_eq!(l.next_token(), token(TokenType::Plus, "+"));
-        assert_eq!(l.next_token(), token(TokenType::Minus, "-"));
-        assert_eq!(l.next_token(), token(TokenType::Star, "*"));
-        assert_eq!(l.next_token(), token(TokenType::Slash, "/"));
+        assert_eq!(l.next().unwrap(), token(TokenType::Plus, "+"));
+        assert_eq!(l.next().unwrap(), token(TokenType::Minus, "-"));
+        assert_eq!(l.next().unwrap(), token(TokenType::Star, "*"));
+        assert_eq!(l.next().unwrap(), token(TokenType::Slash, "/"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
     fn lex_empty_string() {
         let mut l = Lexer::new(String::from(""));
-        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
     fn lex_whitespace() {
         let mut l = Lexer::new(String::from("\r \t \n   "));
-        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
     fn lex_integral_literals() {
         let input = "5 88989 -2928";
         let mut l = Lexer::new(String::from(input));
-        assert_eq!(l.next_token(), token(TokenType::IntegerLiteral, "5"));
-        assert_eq!(l.next_token(), token(TokenType::IntegerLiteral, "88989"));
-        assert_eq!(l.next_token(), token(TokenType::Minus, "-"));
-        assert_eq!(l.next_token(), token(TokenType::IntegerLiteral, "2928"));
-        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
+        assert_eq!(l.next().unwrap(), token(TokenType::IntegerLiteral, "5"));
+        assert_eq!(l.next().unwrap(), token(TokenType::IntegerLiteral, "88989"));
+        assert_eq!(l.next().unwrap(), token(TokenType::Minus, "-"));
+        assert_eq!(l.next().unwrap(), token(TokenType::IntegerLiteral, "2928"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
@@ -263,14 +288,14 @@ mod tests {
         assert_eq!(l.next_token(), token(TokenType::Identifier, "_x"));
         assert_eq!(l.next_token(), token(TokenType::Identifier, "x_x_x78"));
         assert_eq!(l.next_token(), token(TokenType::Identifier, "Yh0A99"));
-        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
     fn lex_invalid_tokens() {
         let mut l = Lexer::new(String::from("#"));
         assert_eq!(l.next_token(), token(TokenType::InvalidToken, "#"));
-        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
@@ -280,14 +305,14 @@ mod tests {
             l.next_token(),
             token(TokenType::StringLiteral, "bla \n bla bla")
         );
-        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
     fn lex_if() {
         let mut l = Lexer::new(String::from("if"));
         assert_eq!(l.next_token(), token(TokenType::If, "if"));
-        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
@@ -295,7 +320,7 @@ mod tests {
         let mut l = Lexer::new(String::from("47;"));
         assert_eq!(l.next_token(), token(TokenType::IntegerLiteral, "47"));
         assert_eq!(l.next_token(), token(TokenType::Semicolon, ";"));
-        assert_eq!(l.next_token(), token(TokenType::EOF, "EOF"));
+        assert_eq!(l.next(), None)
     }
 
     #[test]
@@ -327,9 +352,6 @@ mod tests {
             token(TokenType::InvalidToken, "#"),
             token(TokenType::If, "if"),
             token(TokenType::Equals, "=="),
-            token(TokenType::EOF, "EOF"),
-            token(TokenType::EOF, "EOF"),
-            token(TokenType::EOF, "EOF"),
         ];
 
         for expected in expected_tokens.iter() {
@@ -340,5 +362,6 @@ mod tests {
                 expected, &actual
             );
         }
+        assert_eq!(l.next(), None)
     }
 }
