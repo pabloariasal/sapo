@@ -1,6 +1,6 @@
 use super::token::Token;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     BinaryExpression {
         token: Token,

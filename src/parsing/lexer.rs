@@ -34,7 +34,7 @@ impl Lexer {
             '"' => self.read_string(),
             '-' => token(TokenType::Minus, &self.current_char.to_string()),
             '+' => token(TokenType::Plus, &self.current_char.to_string()),
-            '*' => token(TokenType::Dot, &self.current_char.to_string()),
+            '*' => token(TokenType::Star, &self.current_char.to_string()),
             '/' => token(TokenType::Slash, &self.current_char.to_string()),
             '(' => token(TokenType::LeftParen, &self.current_char.to_string()),
             ')' => token(TokenType::RightParen, &self.current_char.to_string()),
@@ -229,7 +229,7 @@ mod tests {
         let mut l = Lexer::new(String::from(" + - */"));
         assert_eq!(l.next_token(), token(TokenType::Plus, "+"));
         assert_eq!(l.next_token(), token(TokenType::Minus, "-"));
-        assert_eq!(l.next_token(), token(TokenType::Dot, "*"));
+        assert_eq!(l.next_token(), token(TokenType::Star, "*"));
         assert_eq!(l.next_token(), token(TokenType::Slash, "/"));
     }
 

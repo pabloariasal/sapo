@@ -1,48 +1,187 @@
 use super::lexer::Lexer;
 use crate::ast;
-use crate::token;
+use crate::token::{Token, TokenType};
+use std::iter::Peekable;
 
-pub fn parse(input: String) -> Result<ast::Expression, String> {
-    // let mut lexer = Lexer::new(input);
-    // parse_expression(&mut lexer);
-    let literal = Box::new(ast::Expression::IntegerLiteral {
-        token: token::Token::new(token::TokenType::IntegerLiteral, String::from("999")),
-        value: 999,
-    });
-    Ok(ast::Expression::UnaryExpression {
-        token: token::Token::new(token::TokenType::Bang, String::from("!")),
-        right: literal,
-    })
+type ParsedExpressionResult = Result<Box<ast::Expression>, String>;
+
+pub fn parse(input: String) -> ParsedExpressionResult {
+    let mut lexer = Lexer::new(input);
+    let mut tokens = Vec::new();
+    tokens.push(lexer.next_token());
+    while tokens.last().unwrap().token_type != TokenType::EOF {
+        tokens.push(lexer.next_token());
+    }
+    parse_expression(&mut tokens.into_iter().peekable())
 }
 
-fn parse_expression(lexer: &mut Lexer) -> Result<ast::Expression, String> {
-    parse_equality(lexer)
-}
-
-fn parse_equality(lexer: &mut Lexer) -> Result<ast::Expression, String> {
-    Err(String::from("ks"))
-}
-
-// fn parse_comparison(lexer: &mut Lexer) -> Result<ast::Expression, String> {}
-
-// fn parse_term(lexer: &mut Lexer) -> Result<ast::Expression, String> {}
-
-// fn pare_factor(lexer: &mut Lexer) -> Result<ast::Expression, String> {}
-
-// fn parse_unary_operation(lexer: &mut Lexer) -> Result<ast::Expression, String> {}
-
-// fn parse_primary_expr(lexer: &mut Lexer) -> Result<ast::Expression, String> {}
-
-fn match_token<I>(lexer: &mut Lexer, types_to_match: I) -> Option<token::Token>
+fn parse_expression<I>(tokens: &mut Peekable<I>) -> ParsedExpressionResult
 where
-    I: IntoIterator<Item = token::TokenType>,
+    I: Iterator<Item = Token>,
 {
-    let next_token = lexer.next_token();
-    let found = types_to_match
-        .into_iter()
-        .find(|t| *t == next_token.token_type);
-    match found {
-        Some(_) => Some(next_token),
-        _ => None,
+    parse_equality(tokens)
+}
+
+fn parse_equality<I>(tokens: &mut Peekable<I>) -> ParsedExpressionResult
+where
+    I: Iterator<Item = Token>,
+{
+    const EQUALITY_TOKENS: [TokenType; 2] = [TokenType::Bang, TokenType::BangEquals];
+    let mut left = parse_comparison(tokens)?;
+    while let Some(token) = match_token(tokens, &EQUALITY_TOKENS) {
+        let right = parse_comparison(tokens)?;
+        left = Box::new(ast::Expression::BinaryExpression { token, left, right });
+    }
+    Ok(left)
+}
+
+fn parse_comparison<I>(tokens: &mut Peekable<I>) -> ParsedExpressionResult
+where
+    I: Iterator<Item = Token>,
+{
+    const COMPARISON_TOKENS: [TokenType; 4] = [
+        TokenType::Greater,
+        TokenType::GreaterEquals,
+        TokenType::Smaller,
+        TokenType::SmallerEquals,
+    ];
+    let mut left = parse_term(tokens)?;
+    while let Some(token) = match_token(tokens, &COMPARISON_TOKENS) {
+        let right = parse_term(tokens)?;
+        left = Box::new(ast::Expression::BinaryExpression { token, left, right });
+    }
+    Ok(left)
+}
+
+fn parse_term<I>(tokens: &mut Peekable<I>) -> ParsedExpressionResult
+where
+    I: Iterator<Item = Token>,
+{
+    const TERM_TOKENS: [TokenType; 2] = [TokenType::Minus, TokenType::Plus];
+    let mut left = parse_factor(tokens)?;
+    while let Some(token) = match_token(tokens, &TERM_TOKENS) {
+        let right = parse_factor(tokens)?;
+        left = Box::new(ast::Expression::BinaryExpression { token, left, right });
+    }
+    Ok(left)
+}
+
+fn parse_factor<I>(tokens: &mut Peekable<I>) -> ParsedExpressionResult
+where
+    I: Iterator<Item = Token>,
+{
+    const FACTOR_TOKENS: [TokenType; 2] = [TokenType::Star, TokenType::Slash];
+    let mut left = parse_unary_operation(tokens)?;
+    while let Some(token) = match_token(tokens, &FACTOR_TOKENS) {
+        let right = parse_unary_operation(tokens)?;
+        left = Box::new(ast::Expression::BinaryExpression { token, left, right });
+    }
+    Ok(left)
+}
+
+fn parse_unary_operation<I>(tokens: &mut Peekable<I>) -> ParsedExpressionResult
+where
+    I: Iterator<Item = Token>,
+{
+    const UNARY_OPERATORS: [TokenType; 2] = [TokenType::Bang, TokenType::Minus];
+    if let Some(token) = match_token(tokens, &UNARY_OPERATORS) {
+        // stuff like !! and even -- is allowed by the grammar...
+        let right = parse_unary_operation(tokens)?;
+        return Ok(Box::new(ast::Expression::UnaryExpression { token, right }));
+    }
+    parse_primary_expr(tokens)
+}
+
+fn parse_primary_expr<I>(tokens: &mut Peekable<I>) -> ParsedExpressionResult
+where
+    I: Iterator<Item = Token>,
+{
+    if let Some(token) = match_token(tokens, &[TokenType::IntegerLiteral]) {
+        let value = token.lexeme.parse::<i32>().unwrap();
+        return Ok(Box::new(ast::Expression::IntegerLiteral { token, value }));
+    }
+    if let Some(token) = match_token(tokens, &[TokenType::BooleanLiteral]) {
+        let value = token.lexeme.parse::<bool>().unwrap();
+        return Ok(Box::new(ast::Expression::BooleanLiteral { token, value }));
+    }
+    if let Some(token) = match_token(tokens, &[TokenType::StringLiteral]) {
+        let value = token.lexeme.clone();
+        return Ok(Box::new(ast::Expression::StringLiteral { token, value }));
+    }
+    if let Some(token) = match_token(tokens, &[TokenType::LeftParen]) {
+        let expr = parse_expression(tokens)?;
+        if let None = match_token(tokens, &[TokenType::RightParen]) {
+            return Err(String::from("Expected ')'"));
+        };
+        return Ok(Box::new(ast::Expression::Grouping { token, expr }));
+    }
+    Err("Invalid expression".to_string())
+}
+
+fn match_token<I>(tokens: &mut Peekable<I>, types_to_match: &[TokenType]) -> Option<Token>
+where
+    I: Iterator<Item = Token>,
+{
+    if let Some(next_token) = tokens.peek() {
+        if let Some(_) = types_to_match.iter().find(|&t| *t == next_token.token_type) {
+            return tokens.next();
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_integer_literal() {
+        let input = String::from("6");
+        let ast = parse(input).unwrap();
+        assert_integer_literal(*ast, 6);
+    }
+
+    #[test]
+    fn parse_boolean_literal() {
+        let input = String::from("true");
+        let ast = parse(input).unwrap();
+        assert_boolean_literal(*ast, true);
+    }
+
+    #[test]
+    fn parse_string_literal() {
+        let input = String::from("\"sapo\"");
+        let ast = parse(input).unwrap();
+        assert_string_literal(*ast, "sapo");
+    }
+
+    fn assert_integer_literal(node: ast::Expression, expected_value: i32) {
+        assert_eq!(
+            node,
+            ast::Expression::IntegerLiteral {
+                token: Token::new(TokenType::IntegerLiteral, expected_value.to_string()),
+                value: expected_value
+            }
+        )
+    }
+
+    fn assert_boolean_literal(node: ast::Expression, expected_value: bool) {
+        assert_eq!(
+            node,
+            ast::Expression::BooleanLiteral {
+                token: Token::new(TokenType::BooleanLiteral, expected_value.to_string()),
+                value: expected_value
+            }
+        )
+    }
+
+    fn assert_string_literal(node: ast::Expression, expected_value: &str) {
+        assert_eq!(
+            node,
+            ast::Expression::StringLiteral {
+                token: Token::new(TokenType::StringLiteral, expected_value.to_string()),
+                value: expected_value.to_string()
+            }
+        )
     }
 }

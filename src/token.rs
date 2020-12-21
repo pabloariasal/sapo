@@ -13,7 +13,7 @@ pub enum TokenType {
     // Arithmetic operators
     Minus,
     Plus,
-    Dot,
+    Star,
     Slash,
 
     // Prefixed tokens (!=, ==, <=, etc)
