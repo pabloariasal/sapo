@@ -13,7 +13,7 @@ fn main() {
         match input.trim() {
             "exit" => break,
             _ => {
-                println!("{:#?}", sapo::parse(input).unwrap());
+                println!("{}", sapo::ast_printer::print_ast(sapo::parse(input).unwrap()));
             }
         };
     }
