@@ -127,55 +127,58 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ast_printer;
 
     #[test]
     fn parse_integer_literal() {
-        let input = String::from("6");
-        let ast = parse(input).unwrap();
-        assert_integer_literal(*ast, 6);
-    }
-
-    #[test]
-    fn parse_boolean_literal() {
-        let input = String::from("true");
-        let ast = parse(input).unwrap();
-        assert_boolean_literal(*ast, true);
+        assert_ast("6", "(IntLit 6)");
     }
 
     #[test]
     fn parse_string_literal() {
-        let input = String::from("\"sapo\"");
-        let ast = parse(input).unwrap();
-        assert_string_literal(*ast, "sapo");
+        assert_ast("\"test\"", "(StrLit test)");
     }
 
-    fn assert_integer_literal(node: ast::Expression, expected_value: i32) {
-        assert_eq!(
-            node,
-            ast::Expression::IntegerLiteral {
-                token: Token::new(TokenType::IntegerLiteral, expected_value.to_string()),
-                value: expected_value
-            }
+    #[test]
+    fn parse_boolean_literal() {
+        assert_ast("false", "(BoolLit false)");
+    }
+
+    #[test]
+    fn parse_single_binary_expression() {
+        assert_ast("7 >= 8", "(>= (IntLit 7) (IntLit 8))")
+    }
+
+    #[test]
+    fn parse_unary_expression() {
+        assert_ast("-9", "(- (IntLit 9))")
+    }
+
+    #[test]
+    fn parse_grouping_expression() {
+        assert_ast("(9)", "(Group (IntLit 9))")
+    }
+
+    #[test]
+    fn operator_associativity() {
+        assert_ast("7 * 9 * 3", "(* (* (IntLit 7) (IntLit 9)) (IntLit 3))")
+    }
+
+    #[test]
+    fn operator_precedence() {
+        assert_ast("7 * 9 - 3", "(- (* (IntLit 7) (IntLit 9)) (IntLit 3))")
+    }
+
+    #[test]
+    fn operator_precedence_with_grouping() {
+        assert_ast(
+            "7 * (9 + 3)",
+            "(* (IntLit 7) (Group (+ (IntLit 9) (IntLit 3))))",
         )
     }
 
-    fn assert_boolean_literal(node: ast::Expression, expected_value: bool) {
-        assert_eq!(
-            node,
-            ast::Expression::BooleanLiteral {
-                token: Token::new(TokenType::BooleanLiteral, expected_value.to_string()),
-                value: expected_value
-            }
-        )
-    }
-
-    fn assert_string_literal(node: ast::Expression, expected_value: &str) {
-        assert_eq!(
-            node,
-            ast::Expression::StringLiteral {
-                token: Token::new(TokenType::StringLiteral, expected_value.to_string()),
-                value: expected_value.to_string()
-            }
-        )
+    fn assert_ast(input: &str, expected: &str) {
+        let ast = parse(String::from(input)).unwrap();
+        assert_eq!(ast_printer::print_ast(ast), expected);
     }
 }
