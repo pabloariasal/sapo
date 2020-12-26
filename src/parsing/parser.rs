@@ -1,9 +1,43 @@
 use super::lexer::Lexer;
 use crate::ast;
 use crate::token::{Token, TokenType};
+use std::fmt;
 use std::iter::Peekable;
 
-type ParsedExpressionResult = Result<Box<ast::Expression>, String>;
+#[derive(Debug)]
+pub enum ParseError {
+    MissingBrace(Token),
+    MissingExpression(Token),
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ParseError::MissingBrace(t) => write!(
+                f,
+                "Error at {}: Expected ')', but '{}' was found.",
+                &get_location_of_error(t),
+                t.lexeme
+            ),
+            ParseError::MissingExpression(t) => write!(
+                f,
+                "Error at {}: Expected expression, but '{}' was found.",
+                get_location_of_error(&t),
+                t.lexeme
+            ),
+        }
+    }
+}
+
+fn get_location_of_error(token: &Token) -> String {
+    if token.token_type == TokenType::EOF {
+        String::from("end of file")
+    } else {
+        format!("line {}", token.line)
+    }
+}
+
+type ParsedExpressionResult = Result<Box<ast::Expression>, ParseError>;
 
 pub fn parse(input: String) -> ParsedExpressionResult {
     parse_expression(&mut Lexer::new(input).peekable())
@@ -105,11 +139,22 @@ where
     if let Some(token) = match_token(tokens, &[TokenType::LeftParen]) {
         let expr = parse_expression(tokens)?;
         if let None = match_token(tokens, &[TokenType::RightParen]) {
-            return Err(String::from("Expected ')'"));
+            return Err(ParseError::MissingBrace(next_token(tokens)));
         };
         return Ok(Box::new(ast::Expression::Grouping { token, expr }));
     }
-    Err("Invalid expression".to_string())
+
+    Err(ParseError::MissingExpression(next_token(tokens)))
+}
+
+fn next_token<I>(tokens: &mut Peekable<I>) -> Token
+where
+    I: Iterator<Item = Token>,
+{
+    tokens
+        .peek()
+        .unwrap_or(&Token::new(TokenType::EOF, String::from("EOF"), -1))
+        .clone()
 }
 
 fn match_token<I>(tokens: &mut Peekable<I>, types_to_match: &[TokenType]) -> Option<Token>
@@ -175,6 +220,22 @@ mod tests {
             "7 * (9 + 3)",
             "(* (IntLit 7) (Group (+ (IntLit 9) (IntLit 3))))",
         )
+    }
+
+    #[test]
+    #[should_panic(expected = "Error at line 1: Expected expression, but ';' was found")]
+    fn missing_expression_error() {
+        if let Err(error) = parse(String::from("8 + ;")) {
+            panic!("{}", error);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "Error at end of file: Expected ')', but 'EOF' was found")]
+    fn missing_closing_brace_error() {
+        if let Err(error) = parse(String::from("(8 + 7")) {
+            panic!("{}", error);
+        }
     }
 
     fn assert_ast(input: &str, expected: &str) {

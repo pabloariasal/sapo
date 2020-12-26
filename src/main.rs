@@ -12,9 +12,10 @@ fn main() {
 
         match input.trim() {
             "exit" => break,
-            _ => {
-                println!("{}", sapo::ast_printer::print_ast(sapo::parse(input).unwrap()));
-            }
+            _ => match sapo::parse(input) {
+                Ok(ast) => println!("{}", sapo::ast_printer::print_ast(ast)),
+                Err(error) => println!("{}", error),
+            },
         };
     }
 }
