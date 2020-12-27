@@ -2,9 +2,9 @@ use std::io;
 use std::io::Write;
 
 fn main() {
-    println!("Sapo Programming Language");
+    println!("Sapo Programming Language 🐸");
     loop {
-        print!("=> ");
+        print!("🐸> ");
         io::stdout().flush().unwrap();
 
         let mut input = String::new();
@@ -13,7 +13,10 @@ fn main() {
         match input.trim() {
             "exit" => break,
             _ => match sapo::parse(input) {
-                Ok(ast) => println!("{}", sapo::ast_printer::print_ast(ast)),
+                Ok(ast) => match sapo::evaluate(&*ast) {
+                    Ok(result) => println!("{}", result),
+                    Err(error) => println!("{}", error),
+                },
                 Err(error) => println!("{}", error),
             },
         };

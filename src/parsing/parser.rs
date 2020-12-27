@@ -15,13 +15,13 @@ impl fmt::Display for ParseError {
         match self {
             ParseError::MissingBrace(t) => write!(
                 f,
-                "Error at {}: Expected ')', but '{}' was found.",
+                "ParseError at {}: Expected ')', but '{}' was found.",
                 &get_location_of_error(t),
                 t.lexeme
             ),
             ParseError::MissingExpression(t) => write!(
                 f,
-                "Error at {}: Expected expression, but '{}' was found.",
+                "ParseError at {}: Expected expression, but '{}' was found.",
                 get_location_of_error(&t),
                 t.lexeme
             ),
