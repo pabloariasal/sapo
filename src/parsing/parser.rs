@@ -54,7 +54,7 @@ fn parse_equality<I>(tokens: &mut Peekable<I>) -> ParsedExpressionResult
 where
     I: Iterator<Item = Token>,
 {
-    const EQUALITY_TOKENS: [TokenType; 2] = [TokenType::Bang, TokenType::BangEquals];
+    const EQUALITY_TOKENS: [TokenType; 2] = [TokenType::Equals, TokenType::BangEquals];
     let mut left = parse_comparison(tokens)?;
     while let Some(token) = match_token(tokens, &EQUALITY_TOKENS) {
         let right = parse_comparison(tokens)?;
@@ -192,6 +192,17 @@ mod tests {
     #[test]
     fn parse_single_binary_expression() {
         assert_ast("7 >= 8", "(>= (IntLit 7) (IntLit 8))")
+    }
+
+    #[test]
+    fn parse_comparion_operators() {
+        assert_ast("true == false", "(== (BoolLit true) (BoolLit false))");
+        assert_ast("true != false", "(!= (BoolLit true) (BoolLit false))");
+        assert_ast("6 != 45", "(!= (IntLit 6) (IntLit 45))");
+        assert_ast("6 > 45", "(> (IntLit 6) (IntLit 45))");
+        assert_ast("6 >= true", "(>= (IntLit 6) (BoolLit true))");
+        assert_ast("\"hello\" < 45", "(< (StrLit hello) (IntLit 45))");
+        assert_ast("6 >= 45", "(>= (IntLit 6) (IntLit 45))");
     }
 
     #[test]

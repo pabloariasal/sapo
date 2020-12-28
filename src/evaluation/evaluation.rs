@@ -41,14 +41,20 @@ fn evaluate_unary_expression(token: &Token, right: &Expression) -> EvalResult {
             if let Object::Boolean(value) = right {
                 Ok(Object::Boolean(!value))
             } else {
-                Err(error("Invalid operand for '!', expected boolean expression", token))
+                Err(error(
+                    "Invalid operand for '!', expected boolean expression",
+                    token,
+                ))
             }
         }
         TokenType::Minus => {
             if let Object::Integer(value) = right {
                 Ok(Object::Integer(-value))
             } else {
-                Err(error("Invalid operand for '-', expected integer expression", token))
+                Err(error(
+                    "Invalid operand for '-', expected integer expression",
+                    token,
+                ))
             }
         }
         _ => Err("Unreachable".to_string()),

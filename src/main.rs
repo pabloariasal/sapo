@@ -14,7 +14,10 @@ fn main() {
             "exit" => break,
             _ => match sapo::parse(input) {
                 Ok(ast) => match sapo::evaluate(&*ast) {
-                    Ok(result) => println!("{}", result),
+                    Ok(result) => {
+                        // println!("{}", sapo::ast_printer::print_ast(ast));
+                        println!("{}", result);
+                    }
                     Err(error) => println!("{}", error),
                 },
                 Err(error) => println!("{}", error),

@@ -7,3 +7,4 @@ pub mod evaluation;
 
 pub use parsing::*;
 pub use evaluation::*;
+pub use ast_printer::*;
